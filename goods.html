@@ -1,0 +1,298 @@
+<html>
+<head>
+    <title>Товары</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+</head>
+<body>
+    <style>
+        .container{
+            align-self: center;
+        }
+        h1{
+            text-align: center;
+            color: #039;
+        }
+       
+        th {
+            font-weight: normal;
+            color: #039;
+            padding: 10px 15px;
+        }
+        td {
+            color: #669;
+            border-top: 1px solid #e8edff;
+            padding: 10px 15px;
+        }
+        tr:hover td {
+            background: #e8edff;
+        }
+        .page{
+			width: 10px;
+			height: 15px;
+			
+			margin:1px;
+			padding: 7px 10px 9px;
+			background-color: white;
+		}
+		.page:hover{
+			background-color:#e8edff;
+		}
+		.pageLayer{
+			display:flex;
+			flex-direction: row;
+		}
+        .active{
+			background-color: lightblue;
+		}
+        input{
+            width:100px;
+            padding: 4px;
+            color: #039;
+        }
+        select,label,button{
+            padding: 5px;
+            color: #039;
+        }
+        button{
+            margin: 5px;
+        }
+        
+        .filterLayer{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            align-content: space-around;
+        }
+        .filterItem{
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-content: space-around;
+        }
+    </style>
+
+    <h1>Список товаров</h1>
+
+    <div class="container">
+       
+        <div class="goods" id="vueapp">
+        
+            <div class="filterLayer">
+                
+                <div class="filterItem">
+                    <label for="sel-title">Название</label>
+                    <select id="sel-title" >
+                        <option value="all" selected>все</option>
+                        <option v-for="optionTitle in optionTitles" v-bind:value="optionTitle">{{optionTitle}}</option>
+                    </select>
+                </div>
+                <div class="filterItem">
+                    <label for="sel-amount">Количество</label>
+                    <div>
+                        <select id="sel-amount">
+                        <option value="all" selected>все</option>
+                        <option value="more">больше</option>
+                        <option value="less">меньше</option>
+                        <option value="equal">равно</option>
+                        </select>
+                        <input id="sel-amount-num" type="number" min="0">
+                    </div>
+                    
+                </div>
+                <div class="filterItem">
+                    <label for="sel-dis">Расстояние</label>
+                    <div>
+                        <select id="sel-dis">
+                        <option value="all" selected>все</option>
+                        <option value="more">больше</option>
+                        <option value="less">меньше</option>
+                        <option value="equal">равно</option>
+                        </select>
+                        <input id="sel-dis-num" type="number" min="0">
+                    </div>
+                   
+                </div>
+                <div class="filterItem">
+                    <button id="filterBtn">Применить</button>
+                    <button id="loadBtn">Сбросить</button>
+                </div>
+            </div>
+            
+
+            <br>
+            <table class="table table-striped" cellpadding="5">
+              <thead>
+                <tr>
+                  <th scope="col">Дата</th>
+                  <th scope="col">Название</th>
+                  <th scope="col">Количество</th>
+                  <th scope="col">Расстояние</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="product in shownProducts">
+                  <td>{{product.date | formatDate}}</td>
+                  <td>{{product.title}}</td>
+                  <td>{{product.amount}}</td>
+                  <td>{{product.distance}}</td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+        <br>
+	<div id="pageLayer" class="pageLayer">
+    </div>
+   
+
+    <script>
+
+        var vueapp = new Vue({
+            el: '#vueapp',
+            data: {
+                products: [],
+                filterData:[],
+                optionTitles: [],
+                amountPages:1,
+                activePage:1,
+                shownProducts:[],
+                perPage:3, 
+                filterObject:{
+                    title:"all",
+                    amount:{
+                        sign:"all",
+                        number:0
+                    },
+                    distance:{
+                        sign:"all",
+                        number:0
+                    }
+                }
+            },
+            filters:{
+                formatDate: function(value){
+                    let tempDate=new Date(value);
+                    return tempDate.getFullYear()+"-"+(+tempDate.getMonth()+1)+"-"+ tempDate.getDate();
+                }
+            },
+            methods:{
+                getFilterParams: function (){
+                    this.filterObject.title=$("#sel-title option:selected").val();
+                    this.filterObject.amount.sign=$("#sel-amount option:selected").val();
+                    this.filterObject.amount.number=$("#sel-amount-num").val();
+                    this.filterObject.distance.sign=$("#sel-dis option:selected").val();
+                    this.filterObject.distance.number=$("#sel-dis-num").val();
+                },
+                bulidFilterData: function(){
+                    this.filterData=[];
+                    for(let i=0;i<this.products.length;i++){
+                        if (this.filterObject.title!="all"){
+                            if (this.products[i].title!= this.filterObject.title) continue;
+                        };
+                        if (this.filterObject.amount.sign!="all") {
+                            if (this.filterObject.amount.sign=="equal") {
+                                if (this.products[i].amount!= this.filterObject.amount.number) continue;
+                            }
+                            if (this.filterObject.amount.sign=="less"){
+                                if (this.products[i].amount> this.filterObject.amount.number) continue;
+                            }
+                            if (this.filterObject.amount.sign=="more"){
+                                if (this.products[i].amount< this.filterObject.amount.number) continue;
+                            }
+                        }
+                        if (this.filterObject.distance.sign!="all") {
+                            if (this.filterObject.distance.sign=="equal") {
+                                if (this.products[i].distance!= this.filterObject.distance.number) continue;
+                            }
+                            if (this.filterObject.distance.sign=="less"){
+                                if (this.products[i].distance> this.filterObject.distance.number) continue;
+                            }
+                            if (this.filterObject.distance.sign=="more"){
+                                if (this.products[i].distance< this.filterObject.distance.number) continue;
+                            }
+                        }
+                        this.filterData.push(this.products[i]);
+                    };
+                    this.amountPages=Math.ceil(this.filterData.length/this.perPage);
+                    this.activePage=1;
+                    this.shownProducts=this.filterData.slice(0,vueapp.perPage);
+                }
+                
+
+            }       
+        });
+
+        function getData(){
+            $.getJSON("https://fierce-lake-67216.herokuapp.com/db", function(result){
+                vueapp.products=result.results;
+                vueapp.filterData=vueapp.products.slice();
+                vueapp.amountPages=Math.ceil(vueapp.products.length/vueapp.perPage);
+                vueapp.shownProducts=vueapp.products.slice(0,vueapp.perPage);
+
+                vueapp.optionTitles=[];
+                vueapp.products.forEach(element => {
+                    if(vueapp.optionTitles.indexOf(element.title)==-1) vueapp.optionTitles.push(element.title);
+                });
+                renderPages();
+            });  
+        }
+
+        function createPage(number){
+            let page=document.createElement("div");
+            page.classList.add("page");
+            page.innerHTML=number;
+            page.addEventListener("click",function(event){
+                let activeDiv=event.target;
+                let pageAll=document.getElementsByClassName('page');
+
+                for(let i=0;i<pageAll.length;i++){
+                    pageAll[i].classList.remove("active");
+                }
+                activeDiv.classList.add("active");
+                vueapp.activePage=Number(activeDiv.innerHTML);
+               
+                if (vueapp.activePage==vueapp.amountPages) vueapp.shownProducts=vueapp.filterData.slice((vueapp.activePage-1)*vueapp.perPage);
+                else vueapp.shownProducts=vueapp.filterData.slice((vueapp.activePage-1)*vueapp.perPage,vueapp.perPage* vueapp.activePage);
+                });
+               
+            document.getElementById("pageLayer").append(page);
+        }
+
+      
+        function renderPages(){
+            discardPages();
+            for (let i=1;i<vueapp.amountPages+1;i++){
+                    createPage(i);
+            }
+        }
+
+        function discardPages(){
+            let arr=document.getElementsByClassName("page");
+            do {
+                for (let i=0;i<arr.length;i++){
+                //arr[i].parentNode.removeChild(arr[i]);
+                document.getElementById("pageLayer").removeChild(arr[i]);
+                }
+                arr=document.getElementsByClassName("page");
+            } while (arr.length>0)
+           
+        }
+
+        function applyFilter(){
+           
+            vueapp.getFilterParams();
+            vueapp.bulidFilterData();
+            renderPages();
+        }
+
+        document.getElementById("loadBtn").addEventListener("click",getData);
+        document.getElementById("filterBtn").addEventListener("click", applyFilter);
+        getData();
+       
+     
+    </script>
+</body>
+<html>
